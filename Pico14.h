@@ -215,7 +215,8 @@ namespace Pico14_ns
 		//int16_t		g_overflow;
 		int16_t		g_ready2;
 
-		
+		int16_t * buffers2[PS6000_MAX_CHANNEL_BUFFERS];
+		uint32_t sampleCount2;
 
 
 		int16_t inputRanges[PS6000_MAX_RANGES];

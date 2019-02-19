@@ -1,4 +1,3 @@
-
 #include <Pico14Class.h>
 #include <tango.h>
 #include <Pico14.h>
@@ -107,8 +106,7 @@ void StreamDataHandler(UNIT * unit, PICO_STATUS *status, BUFFER_INFO * bufferInf
 	{
 		g_ready = FALSE;
 		IsRunning = TRUE;
-		//set_status("Collecting data");
-		//set_state(Tango::RUNNING);
+		
 	}
 	else
 	{
@@ -160,11 +158,11 @@ void StreamDataHandler(UNIT * unit, PICO_STATUS *status, BUFFER_INFO * bufferInf
 			{
 				if (!BusyReadingData)
 				{
-					//chanAT.shrink_to_fit();
 					BusyCopyData = TRUE;
+					//chanAT.shrink_to_fit();
 					//chanAT.reserve(chanAT.size() + chanATT.size());
 					//chanAT.insert(chanAT.end(), chanATT.begin(), chanATT.end());
-					for (qwe = 0; qwe < chanATT.size(); qwe = qwe + 200)
+					for (qwe = 0; qwe < chanATT.size(); qwe = qwe + 100)
 					{
 						chanAT.push_back(chanATT[qwe]);
 					}

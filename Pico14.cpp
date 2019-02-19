@@ -422,6 +422,9 @@ namespace Pico14_ns
 
 		Pico14::set_defaults();
 		IsRunningGetValues = TRUE;
+		//set_status("Collecting data");
+		//set_state(Tango::RUNNING);
+
 		thread thr(StreamDataHandler, unit, &status, &bufferInfo, &chanA);
 		thr.detach();
 
@@ -488,12 +491,16 @@ namespace Pico14_ns
 
 		IsRunningGetValues = FALSE;
 		ps6000Stop(unit->handle);
-
+		
 		if (unit->channelSettings[PS6000_CHANNEL_A].enabled)
 		{
 			free(buffers[0]);
 			free(buffers[1]);
 		}
+		BusyCopyData = TRUE;
+		chanA.clear();
+		set_status("Picoscope device is ON");
+		set_state(Tango::ON);
 		//chanA.clear();
 		//set_status("Picoscope device is ON");
 		//set_state(Tango::ON);
@@ -517,23 +524,23 @@ namespace Pico14_ns
 
 		chanA.clear();
 		Pico14::set_defaults();
-
-		sampleCount = BUFFER_SIZE;
+		BusyCopyData = TRUE;
+		sampleCount2 = BUFFER_SIZE;
 		segmentIndex = 0;
 		timeInterval = 0.00f;
 
-		buffers[0] = (int16_t*)calloc(sampleCount, sizeof(int16_t));
-		buffers[1] = (int16_t*)calloc(sampleCount, sizeof(int16_t));
+		buffers2[0] = (int16_t*)calloc(sampleCount2, sizeof(int16_t));
+		buffers2[1] = (int16_t*)calloc(sampleCount2, sizeof(int16_t));
 
-		status = ps6000SetDataBuffers(unit->handle, PS6000_CHANNEL_A, buffers[0], buffers[1], sampleCount, PS6000_RATIO_MODE_NONE);
+		status = ps6000SetDataBuffers(unit->handle, PS6000_CHANNEL_A, buffers2[0], buffers2[1], sampleCount2, PS6000_RATIO_MODE_NONE);
 
-		while ((status = ps6000GetTimebase2(unit->handle, timebase, sampleCount, &timeInterval, 1, &maxSamples, segmentIndex)) != PICO_OK)
+		while ((status = ps6000GetTimebase2(unit->handle, timebase, sampleCount2, &timeInterval, 1, &maxSamples, segmentIndex)) != PICO_OK)
 		{
 			timebase++;
 		}
 		g_ready2 = NULL;
 
-		status = ps6000RunBlock(unit->handle, 0, sampleCount, timebase, 1, &timeIndisposed, segmentIndex, NULL, NULL);
+		status = ps6000RunBlock(unit->handle, 0, sampleCount2, timebase, 1, &timeIndisposed, segmentIndex, NULL, NULL);
 
 		while (g_ready2 == NULL)
 		{
@@ -542,14 +549,14 @@ namespace Pico14_ns
 
 		if (g_ready2 != NULL)
 		{
-			status = ps6000GetValues(unit->handle, 0, (uint32_t*)&sampleCount, 1, PS6000_RATIO_MODE_NONE, 0, NULL);
+			status = ps6000GetValues(unit->handle, 0, (uint32_t*)&sampleCount2, 1, PS6000_RATIO_MODE_NONE, 0, NULL);
 
-			sampleCount = min(sampleCount, BUFFER_SIZE);
+			sampleCount2 = min(sampleCount2, BUFFER_SIZE);
 
-			for (i = 0; i < sampleCount; i++)
+			for (i = 0; i < sampleCount2; i++)
 			{
-				buffers[0][i] = buffers[0][i] * inputRanges[unit->channelSettings[PS6000_CHANNEL_A].range] / PS6000_MAX_VALUE;
-				chanA.push_back(buffers[0][i]);
+				//buffers2[0][i] = buffers2[0][i] * inputRanges[unit->channelSettings[PS6000_CHANNEL_A].range] / PS6000_MAX_VALUE;
+				chanA.push_back(buffers2[0][i]);
 			}
 		}
 
@@ -559,8 +566,8 @@ namespace Pico14_ns
 		{
 			if (unit->channelSettings[i].enabled)
 			{
-				free(buffers[i * 2]);
-				free(buffers[i * 2 + 1]);
+				free(buffers2[i * 2]);
+				free(buffers2[i * 2 + 1]);
 			}
 		}
 		/*----- PROTECTED REGION END -----*/	//	Pico14::collect_block
@@ -595,27 +602,28 @@ namespace Pico14_ns
 		DEBUG_STREAM << "Pico14::Update_new()  - " << device_name << endl;
 		/*----- PROTECTED REGION ID(Pico14::update_new) ENABLED START -----*/
 		indexN = chanAT.size();
-		*attr_chanAstream_read = chanAT.size();
+		//*attr_chanAstream_read = chanAT.size();
 		if (!BusyCopyData)
 		{
 			BusyReadingData = TRUE;
 			//chanA.clear();
-			//chanA.reserve(chanA.size() + chanAT.size());
-			//chanA.insert(chanA.end(), chanAT.begin(), chanAT.end());
+			chanA.reserve(chanA.size() + chanAT.size());
+			chanA.insert(chanA.end(), chanAT.begin(), chanAT.end());
 			//chanAT.clear();
 			
 			//indexO = 0;
-			for (int indexi = indexO; indexO < indexN; indexO= indexO+1)
+			/*for (int indexi = indexO; indexi < indexN; indexi= indexi+1)
 			{
 				chanA.push_back(chanAT[indexi]);
 				//for (int hih=0; hih<5000; hih++)
 				//{
 				//	chanAT.pop_front();
 				//}
-			}
+			}*/
 			//chanAT.shrink_to_fit();
 			//indexO = indexN;
-			//chanAT.clear();
+			//indexO = 0;
+			chanAT.clear();
 			if (chanA.size() > 7900)
 				chanA.clear();
 			BusyReadingData = FALSE;
